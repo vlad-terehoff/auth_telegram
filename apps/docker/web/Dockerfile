@@ -19,5 +19,5 @@ RUN poetry config virtualenvs.create false \
 
 COPY ./apps/base/ .
 
-
-ENTRYPOINT ["sh", "/app/web/app.sh"]
+#
+#ENTRYPOINT ["sh", "/app/web/app.sh"]

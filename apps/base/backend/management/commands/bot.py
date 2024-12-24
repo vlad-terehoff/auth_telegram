@@ -1,4 +1,6 @@
 import asyncio
+
+from aiogram.client.default import DefaultBotProperties
 from django.conf import settings
 import os
 from django.core.management.base import BaseCommand
@@ -9,14 +11,15 @@ from aiogram.filters import CommandStart, Command
 from asgiref.sync import sync_to_async
 from aiogram.enums.parse_mode import ParseMode
 
-from django.contrib.auth.models import User
+
 
 API_TOKEN = settings.BOT_TOKEN
 
 privat = [BotCommand(command='start', description='Начало работы с ботом')]
 
 bot_answer_phone_number = {}
-bot = Bot(token=API_TOKEN, parse_mode=ParseMode.HTML)
+bot = Bot(token=API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+# bot.default_parse_mode = ParseMode.HTML
 
 markup_get_reg = ReplyKeyboardBuilder().add(
     types.KeyboardButton(text='Регистрация'))

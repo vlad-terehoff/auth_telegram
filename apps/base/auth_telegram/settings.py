@@ -78,7 +78,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'auth_telegram.wsgi.application'
-ASGI_APPLICATION = 'base_dir.asgi.application'
+ASGI_APPLICATION = 'auth_telegram.asgi.application'
 
 
 REST_FRAMEWORK = {
