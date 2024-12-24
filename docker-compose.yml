@@ -1,0 +1,69 @@
+version: "3.9"
+
+networks:
+  app-net-dev:
+    driver: bridge
+    name: 'test_auth'
+
+services:
+  auth-web:
+    container_name: auth_web
+    build:
+      context: ./
+      dockerfile: apps/docker/web/Dockerfile
+    command: gunicorn --worker-tmp-dir /dev/shm auth_telegram.wsgi:application --bind 0.0.0.0:8000
+
+    expose:
+      - 8000
+    volumes:
+        - static_volume:/app/web/static
+        - media_volume:/app/web/mediafiles
+
+    networks:
+      - app-net-dev
+
+    ports:
+        - "7555:8000"
+
+    env_file:
+        - apps/.env
+    depends_on:
+      - auth-db
+    restart: unless-stopped
+
+
+  auth-db:
+    image: postgres:16.0
+    container_name: auth_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - apps/.env
+    ports:
+      - "5454:5432"
+    networks:
+      - app-net-dev
+    restart: unless-stopped
+
+
+  auth-bot:
+    build:
+      context: ./
+      dockerfile: apps/docker/web/Dockerfile
+    command: python manage.py bot
+    volumes:
+      - ./apps/base/:/app/web/
+    networks:
+      - app-net-dev
+    env_file:
+      - apps/.env
+    depends_on:
+      - auth-web
+    restart: unless-stopped
+
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+
