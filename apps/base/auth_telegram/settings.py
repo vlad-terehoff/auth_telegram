@@ -153,4 +153,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
-URL_BOT = os.environ.get("URL_BOT")
+URL_BOT = os.environ.get("URL_BOT")+'?start'

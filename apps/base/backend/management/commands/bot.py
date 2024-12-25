@@ -1,56 +1,79 @@
 import asyncio
-
 from aiogram.client.default import DefaultBotProperties
 from django.conf import settings
-import os
 from django.core.management.base import BaseCommand
-from aiogram import Bot, Dispatcher, types, F
-from aiogram.types import Message, BotCommandScopeAllPrivateChats, BotCommand, ReplyKeyboardRemove
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
-from aiogram.filters import CommandStart, Command
+from aiogram import Bot, Dispatcher
+from aiogram.types import (Message, BotCommandScopeAllPrivateChats, BotCommand, InlineKeyboardMarkup,
+                           InlineKeyboardButton, CallbackQuery, User)
+from aiogram.filters import Command, CommandObject
 from asgiref.sync import sync_to_async
 from aiogram.enums.parse_mode import ParseMode
-
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.context import FSMContext
 
 
 API_TOKEN = settings.BOT_TOKEN
 
 privat = [BotCommand(command='start', description='Начало работы с ботом')]
 
-bot_answer_phone_number = {}
 bot = Bot(token=API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-# bot.default_parse_mode = ParseMode.HTML
-
-markup_get_reg = ReplyKeyboardBuilder().add(
-    types.KeyboardButton(text='Регистрация'))
-
-markup_get_contact = ReplyKeyboardBuilder().add(
-    types.KeyboardButton(text='Отправить свой контакт ☎️', request_contact=True))
 
 dp = Dispatcher()
+
+accept = InlineKeyboardButton(text='Авторизироваться',
+                              callback_data='answer_1')
+
+reject = InlineKeyboardButton(text='Отмена',
+                              callback_data='answer_0')
+rows = [[accept], [reject]]
+
+markup = InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+class AuthorizationProcessing(StatesGroup):
+    start = State()
 
 
 def get_organization_token_or_check_superuser(user):
     return user.organization.get_bot_token, user.user.is_superuser
 
 
-@dp.message(CommandStart())
-async def start(message: Message):
-    await message.reply(
-        f"Здравствуйте, это чат-бот для получения уведомлений! \n"
-        f"Для получения уведомлений пройдите регистрацию! \n",
-        reply_markup=markup_get_reg.as_markup(
-            resize_keyboard=True))
+@dp.message(Command(BotCommand(command='start', description='Начало работы с ботом')), )
+async def start(message: Message, command: CommandObject, state: FSMContext):
+    await state.set_state(AuthorizationProcessing.start)
+
+    await state.update_data(token=command.args)
+
+    user: User = message.from_user
+
+    name = f'"{user.first_name} {user.last_name}"' if user.first_name and user.last_name else f'"{user.first_name}"'
+
+    await message.answer(text=(f'Вы входите на <b>Наш великолепный сайт!</b> под учетной записью <b>{name}</b>.\n\n'
 
 
-@dp.message(F.text.lower() == 'регистрация')
-async def registrations(message: Message):
-    answer = await message.reply("Для пользования ботом необходим номер телефона",
-                                 reply_markup=markup_get_contact.as_markup(
-                                     resize_keyboard=True))
-    bot_answer_phone_number[message.from_user.id] = answer.message_id
+                               f'Чтобы продолжить авторизацию на сайте, нажмите на кнопку <b>"Авторизоваться"</b>.\n\n'
+
+                               f'<i>Если вы не совершали никаких действий на сайте, </i>'
+                               f'<i>или попали сюда в результате действий третьих лиц, нажмите на кнопку <b>"Отмена"</b></i>.'),
+                         reply_markup=markup)
 
 
+@dp.callback_query(AuthorizationProcessing.start, lambda c: c.data.startswith('answer_'))
+async def check_received_response(callback_query: CallbackQuery, state: FSMContext):
+    answer = callback_query.data.split('_')[1]
+    if int(answer):
+        await callback_query.answer()
+        data = await state.get_data()
+        token = data.get('token')
+        await callback_query.message.answer(text=f'Вы успешно авторизовались, '
+                                                 f'теперь можно вернуться обратно на сайт'
+                                                 f'Ваш токен {token}')
+        await state.clear()
+        await callback_query.message.delete()
+    else:
+        await state.clear()
+        await callback_query.answer()
+        await callback_query.message.delete()
 # @dp.message(F.contact)
 # async def register_user_contact(message):
 #     if message.contact.user_id in bot_answer_phone_number:
@@ -97,7 +120,6 @@ async def main():
 
 
 class Command(BaseCommand):
-
     help = 'Бот для авторизацией '
 
     def handle(self, *args, **kwargs):
