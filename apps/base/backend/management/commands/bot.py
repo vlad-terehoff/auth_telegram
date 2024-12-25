@@ -10,6 +10,8 @@ from asgiref.sync import sync_to_async
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
+from user.models import User as DjangoUser
+from django.core.exceptions import ObjectDoesNotExist
 
 
 API_TOKEN = settings.BOT_TOKEN
@@ -65,9 +67,23 @@ async def check_received_response(callback_query: CallbackQuery, state: FSMConte
         await callback_query.answer()
         data = await state.get_data()
         token = data.get('token')
+        user_from_message = callback_query.from_user
+
+        try:
+            user: DjangoUser = await sync_to_async(DjangoUser.objects.get)(telegram_chat_id=user_from_message.id)
+            user.auth_token = token
+            await sync_to_async(user.save)()
+
+        except ObjectDoesNotExist:
+            user: DjangoUser = await sync_to_async(DjangoUser.objects.create)(username=user_from_message.username,
+                                                                              first_name=user_from_message.first_name,
+                                                                              last_name=user_from_message.last_name,
+                                                                              telegram_chat_id=user_from_message.id,
+                                                                              auth_token=token)
+
         await callback_query.message.answer(text=f'Вы успешно авторизовались, '
                                                  f'теперь можно вернуться обратно на сайт'
-                                                 f'Ваш токен {token}')
+                                                 f'Ваш токен')
         await state.clear()
         await callback_query.message.delete()
     else:
