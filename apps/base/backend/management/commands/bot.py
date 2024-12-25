@@ -82,51 +82,13 @@ async def check_received_response(callback_query: CallbackQuery, state: FSMConte
                                                                               auth_token=token)
 
         await callback_query.message.answer(text=f'Вы успешно авторизовались, '
-                                                 f'теперь можно вернуться обратно на сайт'
-                                                 f'Ваш токен')
+                                                 f'теперь можно вернуться обратно на сайт')
         await state.clear()
         await callback_query.message.delete()
     else:
         await state.clear()
         await callback_query.answer()
         await callback_query.message.delete()
-# @dp.message(F.contact)
-# async def register_user_contact(message):
-#     if message.contact.user_id in bot_answer_phone_number:
-#         try:
-#             if "+" in message.contact.phone_number:
-#                 user = await sync_to_async(Profile.objects.get)(contact_phone=message.contact.phone_number[1:])
-#             else:
-#                 user = await sync_to_async(Profile.objects.get)(contact_phone=message.contact.phone_number)
-#
-#             bot_token, is_super_user = await sync_to_async(get_organization_token_or_check_superuser)(user)
-#
-#             if bot_token == API_TOKEN or is_super_user:
-#
-#                 if not user.telegram_chat_id:
-#                     user.telegram_chat_id = message.contact.user_id
-#                     await sync_to_async(user.save)()
-#
-#                     if user.telegram_chat_id:
-#                         await message.reply("Вы успешно прошли регистацию",
-#                                             reply_markup=types.ReplyKeyboardRemove())
-#                     else:
-#                         await message.reply("Упс.. \n"
-#                                             "Что то пошло не так...\n"
-#                                             "Попробуйте еще раз",
-#                                             reply_markup=markup_get_contact.as_markup(
-#                                                 resize_keyboard=True))
-#                 else:
-#                     await message.reply("Вы уже проходили регистацию!",
-#                                         reply_markup=types.ReplyKeyboardRemove())
-#             else:
-#                 await message.reply("Вы не являетесь сотрудником данной организации!",
-#                                     reply_markup=types.ReplyKeyboardRemove())
-#
-#         except Profile.DoesNotExist:
-#             await message.reply("Пользователь с данным номером телефона не зарегестрирован в базе!",
-#                                 reply_markup=types.ReplyKeyboardRemove())
-#         bot_answer_phone_number.pop(message.contact.user_id, None)
 
 
 async def main():

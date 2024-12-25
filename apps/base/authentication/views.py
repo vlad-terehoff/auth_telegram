@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from django.shortcuts import redirect
 from rest_framework.permissions import AllowAny
 from django.conf import settings
+import uuid
 
 
 def home(request):
@@ -12,4 +13,6 @@ def home(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def login(request):
-    return redirect(settings.URL_BOT)
+    random_uuid = uuid.uuid4()
+    url = f'{settings.URL_BOT}?start={random_uuid}'
+    return redirect(url)
