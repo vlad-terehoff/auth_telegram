@@ -34,18 +34,36 @@
 </head>
 <body>
 
-    <div id="box">
-
     <h1>Добро пожаловать</h1>
     <a href="#" class="button" id="loginButton" target="_blank" >Войти через Telegram</a>
 
-    </div>
-
 <script>
     $(function() {
-        $('#loginButton').click(function() {
-            $('#box').add('p').text('Ждём вашего действия!');
-        }
+        $('#loginButton').click(function(event) {
+            event.preventDefault();
+            $.get({% url 'login' %}, function (data) {
+               const authKey = data.auth_key
+                window.open(data.url, "_blank");
+
+                function checkStatus() {
+                    $.ajax({
+                        url: "{% url 'check_status_login' %}",
+                        type: "POST",
+                        data: JSON.stringify({auth_key: authKey}),
+                        contentType: "application/json",
+                        success: function(response) {
+                            if (response.status === 'not_auth') {
+                                setTimeout(checkStatus, 3000);
+                            } else {
+                               window.location.href = "{% url 'success' %}?name=" + response.name
+                            }
+                        }
+                    });
+                }
+
+                checkStatus();
+            });
+        });
     });
 
 </script>
