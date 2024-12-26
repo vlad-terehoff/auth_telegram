@@ -41,7 +41,7 @@
     $(function() {
         $('#loginButton').click(function(event) {
             event.preventDefault();
-            $.get({% url 'login' %}, function (data) {
+            $.get('{% url 'login' %}', function (data) {
                const authKey = data.auth_key
                 window.open(data.url, "_blank");
 

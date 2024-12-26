@@ -28,8 +28,7 @@ def success(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def check_status_login(request):
-    # token = request.data.get('token')
-    token = 'ee02947e-d879-4ea1-8078-d033b21ba8f5'
+    token = request.data.get('auth_key')
     user: User = User.objects.filter(auth_token=token).first()
 
     if user:
